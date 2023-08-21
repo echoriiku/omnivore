@@ -1,18 +1,18 @@
 import { HStack, SpanBox, VStack } from '../../elements/LayoutPrimitives'
 import { Button } from '../../elements/Button'
-import { PrimaryDropdown } from '../PrimaryDropdown'
-import { TooltipWrapped } from '../../elements/Tooltip'
 import { LogoBox } from '../../elements/LogoBox'
 import { ReactNode } from 'react'
 import { HEADER_HEIGHT } from '../homeFeed/HeaderSpacer'
 import { theme } from '../../tokens/stitches.config'
-import { ReaderSettingsIcon } from '../../elements/icons/ReaderSettingsIcon'
-import { CircleUtilityMenuIcon } from '../../elements/icons/CircleUtilityMenuIcon'
+import { LeftPanelToggleIcon } from '../../elements/icons/LeftPanelToggleIcon'
 
 type ReaderHeaderProps = {
   alwaysDisplayToolbar: boolean
-  hideDisplaySettings: boolean
   showDisplaySettingsModal: (show: boolean) => void
+
+  showInspectorToggle: boolean
+  inspectorToggleClicked: (event: React.MouseEvent<HTMLElement>) => void
+
   children?: ReactNode
 }
 
@@ -27,12 +27,12 @@ export function ReaderHeader(props: ReaderHeaderProps): JSX.Element {
           left: '0',
           zIndex: 1,
           pt: '0px',
-          position: 'fixed',
+          position: 'relative',
           width: '100%',
           height: HEADER_HEIGHT,
           display: props.alwaysDisplayToolbar ? 'flex' : 'transparent',
           pointerEvents: props.alwaysDisplayToolbar ? 'unset' : 'none',
-          borderBottom: '1px solid transparent',
+          // borderBottom: '1px solid transparent',
           '@xlgDown': {
             bg: '$readerBg',
             pointerEvents: 'unset',
@@ -58,7 +58,7 @@ export function ReaderHeader(props: ReaderHeaderProps): JSX.Element {
           <SpanBox
             css={{
               width: '100%',
-              px: '25px',
+              px: '15px',
               '@lg': {
                 display: props.alwaysDisplayToolbar ? 'flex' : 'none',
               },
@@ -67,7 +67,7 @@ export function ReaderHeader(props: ReaderHeaderProps): JSX.Element {
           >
             {props.children}
           </SpanBox>
-          {!props.alwaysDisplayToolbar && !props.hideDisplaySettings && (
+          {!props.alwaysDisplayToolbar && (
             <SpanBox
               css={{
                 width: '100%',
@@ -93,15 +93,15 @@ function ControlButtonBox(props: ReaderHeaderProps): JSX.Element {
         distribution="end"
         css={{
           marginLeft: 'auto',
-          marginRight: '25px',
+          marginRight: '15px',
           width: '100px',
-          height: '100%',
+          // height: '100%',
           gap: '20px',
           minWidth: '121px',
           pointerEvents: 'all',
         }}
       >
-        <Button
+        {/* <Button
           title="Reader Preferences (d)"
           style="articleActionIcon"
           onClick={() => {
@@ -118,7 +118,19 @@ function ControlButtonBox(props: ReaderHeaderProps): JSX.Element {
             size={25}
             color={theme.colors.thHighContrast.toString()}
           />
-        </PrimaryDropdown>
+        </PrimaryDropdown> */}
+        {props.showInspectorToggle && (
+          <Button
+            title="Toggle Inspector"
+            style="articleActionIcon"
+            onClick={props.inspectorToggleClicked}
+          >
+            <LeftPanelToggleIcon
+              size={25}
+              color={theme.colors.thNotebookSubtle.toString()}
+            />
+          </Button>
+        )}
       </HStack>
     </>
   )

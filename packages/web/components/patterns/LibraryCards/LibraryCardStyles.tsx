@@ -1,7 +1,10 @@
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
 import { ChangeEvent, useMemo } from 'react'
-import { LibraryItemNode } from '../../../lib/networking/queries/useGetLibraryItemsQuery'
+import {
+  LibraryItemNode,
+  ReadableItem,
+} from '../../../lib/networking/queries/useGetLibraryItemsQuery'
 import { Box, SpanBox, VStack } from '../../elements/LayoutPrimitives'
 
 dayjs.extend(relativeTime)
@@ -83,18 +86,18 @@ const shouldHideUrl = (url: string): boolean => {
   return false
 }
 
-export const siteName = (
-  originalArticleUrl: string,
-  itemUrl: string
-): string => {
-  if (shouldHideUrl(originalArticleUrl)) {
+export const siteName = (item: ReadableItem): string => {
+  if (item.siteName) {
+    return item.siteName
+  }
+  if (shouldHideUrl(item.originalArticleUrl)) {
     return ''
   }
   try {
-    return new URL(originalArticleUrl).hostname.replace(/^www\./, '')
+    return new URL(item.originalArticleUrl).hostname.replace(/^www\./, '')
   } catch {}
   try {
-    return new URL(itemUrl).hostname.replace(/^www\./, '')
+    return new URL(item.url).hostname.replace(/^www\./, '')
   } catch {}
   return ''
 }
