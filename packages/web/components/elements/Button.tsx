@@ -259,6 +259,8 @@ export const Button = styled('button', {
         '&:focus': { outline: 'none' },
       },
       articleActionIcon: {
+        display: 'flex',
+        alignItems: 'center',
         bg: 'transparent',
         border: 'none',
         cursor: 'pointer',
