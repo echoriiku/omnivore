@@ -54,30 +54,6 @@ export function VerticalArticleActionsMenu(
           />
         </Button>
 
-        <Button
-          title="Edit Info (i)"
-          style="articleActionIcon"
-          onClick={() => props.articleActionHandler('showEditModal')}
-        >
-          <EditInfoIcon
-            size={25}
-            color={theme.colors.thNotebookSubtle.toString()}
-          />
-        </Button>
-
-        <Button
-          title="Remove (#)"
-          style="articleActionIcon"
-          onClick={() => {
-            props.articleActionHandler('delete')
-          }}
-        >
-          <TrashIcon
-            size={25}
-            color={theme.colors.thNotebookSubtle.toString()}
-          />
-        </Button>
-
         {!props.article?.isArchived ? (
           <Button
             title="Archive (e)"
@@ -101,6 +77,20 @@ export function VerticalArticleActionsMenu(
             />
           </Button>
         )}
+
+        <Button
+          title="Remove (#)"
+          style="articleActionIcon"
+          onClick={() => {
+            props.articleActionHandler('delete')
+          }}
+        >
+          <TrashIcon
+            size={25}
+            color={theme.colors.thNotebookSubtle.toString()}
+          />
+        </Button>
+
         {props.showReaderDisplaySettings && (
           <Button
             title="Display Settings"
@@ -114,16 +104,6 @@ export function VerticalArticleActionsMenu(
           </Button>
         )}
 
-        <ReaderDropdownMenu
-          triggerElement={
-            <CircleUtilityMenuIcon
-              size={25}
-              color={theme.colors.thNotebookSubtle.toString()}
-            />
-          }
-          articleActionHandler={props.articleActionHandler}
-        />
-
         {props.showInspectorToggle && (
           <Button
             title="Toggle Inspector"
@@ -134,6 +114,9 @@ export function VerticalArticleActionsMenu(
             }}
             css={{
               ml: '30px',
+              '@mdDown': {
+                ml: 'unset',
+              },
             }}
           >
             <LeftPanelToggleIcon
