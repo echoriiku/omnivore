@@ -408,11 +408,6 @@ export default function Reader(): JSX.Element {
     articleData?.article.article?.id
   )
 
-  if (articleFetchError && articleFetchError.indexOf('NOT_FOUND') > -1) {
-    router.push('/404')
-    return <LoadingView />
-  }
-
   const [outline, setOutline] = useState<OutlineItem | undefined>(undefined)
 
   useEffect(() => {
@@ -474,6 +469,11 @@ export default function Reader(): JSX.Element {
 
     setOutline(root)
   }, [setOutline])
+
+  if (articleFetchError && articleFetchError.indexOf('NOT_FOUND') > -1) {
+    router.push('/404')
+    return <LoadingView />
+  }
 
   return (
     <SplitPageLayout
