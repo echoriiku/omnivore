@@ -1,7 +1,7 @@
 import * as jwt from 'jsonwebtoken'
 import { deletePagesByParam } from '../../elastic/pages'
+import { setClaims, userRepository } from '../../entity'
 import { User as UserEntity } from '../../entity/user'
-import { setClaims } from '../../entity/utils'
 import { env } from '../../env'
 import {
   DeleteAccountError,
@@ -34,7 +34,7 @@ import {
   UsersSuccess,
 } from '../../generated/graphql'
 import { AppDataSource } from '../../server'
-import { createUser } from '../../services/create_user'
+import { createUser, getTopUsers } from '../../services/create_user'
 import { authorized, userDataToUser } from '../../utils/helpers'
 import { validateUsername } from '../../utils/usernamePolicy'
 import { WithDataSourcesContext } from '../types'
@@ -43,8 +43,10 @@ export const updateUserResolver = authorized<
   UpdateUserSuccess,
   UpdateUserError,
   MutationUpdateUserArgs
->(async (_, { input: { name, bio } }, { models, authTrx, claims }) => {
-  const user = await models.user.get(claims.uid)
+>(async (_, { input: { name, bio } }, { uid }) => {
+  const user = await userRepository.findOneBy({
+    id: uid,
+  })
   if (!user) {
     return { errorCodes: [UpdateUserErrorCode.UserNotFound] }
   }
@@ -63,16 +65,14 @@ export const updateUserResolver = authorized<
     return { errorCodes }
   }
 
-  const updatedUser = await authTrx(async (tx) => {
-    const [updatedRecord, profile] = await Promise.all([
-      models.user.update(
-        claims.uid,
-        { name, source: user.source, sourceUserId: user.sourceUserId },
-        tx
-      ),
-      models.user.updateProfile(claims.uid, { bio }, tx),
-    ])
-    return { ...updatedRecord, profile }
+  const updatedUser = await userRepository.save({
+    id: uid,
+    name,
+    source: user.source,
+    sourceUserId: user.sourceUserId,
+    profile: {
+      bio,
+    },
   })
 
   return { user: userDataToUser(updatedUser) }
@@ -82,69 +82,63 @@ export const updateUserProfileResolver = authorized<
   UpdateUserProfileSuccess,
   UpdateUserProfileError,
   MutationUpdateUserProfileArgs
->(
-  async (
-    _,
-    { input: { userId, username, pictureUrl } },
-    { models, authTrx, claims }
-  ) => {
-    const user = await models.user.get(userId)
-    if (user.id !== claims.uid) {
-      return {
-        errorCodes: [UpdateUserProfileErrorCode.Forbidden],
-      }
-    }
-
-    if (!(username || pictureUrl)) {
-      return {
-        errorCodes: [UpdateUserProfileErrorCode.BadData],
-      }
-    }
-
-    const lowerCasedUsername = username?.toLowerCase()
-    if (lowerCasedUsername) {
-      const existingUser = await models.user.getWhere({
-        username: lowerCasedUsername,
-      })
-      if (existingUser?.id) {
-        return {
-          errorCodes: [UpdateUserProfileErrorCode.UsernameExists],
-        }
-      }
-
-      if (!validateUsername(lowerCasedUsername)) {
-        return {
-          errorCodes: [UpdateUserProfileErrorCode.BadUsername],
-        }
-      }
-    }
-
-    const updatedProfile = await authTrx((tx) =>
-      models.user.updateProfile(
-        userId,
-        {
-          username: lowerCasedUsername,
-          picture_url: pictureUrl,
-        },
-        tx
-      )
-    )
-
-    user.profile = {
-      ...updatedProfile,
-      picture_url: updatedProfile.pictureUrl,
-    }
-
-    return { user: userDataToUser(user) }
+>(async (_, { input: { userId, username, pictureUrl } }, { uid }) => {
+  const user = await userRepository.findOneBy({
+    id: userId,
+  })
+  if (!user) {
+    return { errorCodes: [UpdateUserProfileErrorCode.Unauthorized] }
   }
-)
+
+  if (user.id !== uid) {
+    return {
+      errorCodes: [UpdateUserProfileErrorCode.Forbidden],
+    }
+  }
+
+  if (!(username || pictureUrl)) {
+    return {
+      errorCodes: [UpdateUserProfileErrorCode.BadData],
+    }
+  }
+
+  const lowerCasedUsername = username?.toLowerCase()
+  if (lowerCasedUsername) {
+    const existingUser = await userRepository.findOneBy({
+      profile: {
+        username: lowerCasedUsername,
+      },
+    })
+    if (existingUser?.id) {
+      return {
+        errorCodes: [UpdateUserProfileErrorCode.UsernameExists],
+      }
+    }
+
+    if (!validateUsername(lowerCasedUsername)) {
+      return {
+        errorCodes: [UpdateUserProfileErrorCode.BadUsername],
+      }
+    }
+  }
+
+  const updatedUser = await userRepository.save({
+    id: uid,
+    profile: {
+      username: lowerCasedUsername,
+      pictureUrl,
+    },
+  })
+
+  return { user: userDataToUser(updatedUser) }
+})
 
 export const googleLoginResolver: ResolverFn<
   LoginResult,
   unknown,
   WithDataSourcesContext,
   MutationGoogleLoginArgs
-> = async (_obj, { input }, { models, setAuth }) => {
+> = async (_obj, { input }, { setAuth }) => {
   const { email, secret } = input
 
   try {
@@ -153,7 +147,7 @@ export const googleLoginResolver: ResolverFn<
     return { errorCodes: [LoginErrorCode.AuthFailed] }
   }
 
-  const user = await models.user.getWhere({
+  const user = await userRepository.findOneBy({
     email,
   })
   if (!user?.id) {
@@ -170,13 +164,18 @@ export const validateUsernameResolver: ResolverFn<
   Record<string, unknown>,
   WithDataSourcesContext,
   QueryValidateUsernameArgs
-> = async (_obj, { username }, { models }) => {
+> = async (_obj, { username }) => {
   const lowerCasedUsername = username.toLowerCase()
   if (!validateUsername(lowerCasedUsername)) {
     return false
   }
 
-  return !(await models.user.exists({ username: lowerCasedUsername }))
+  const user = await userRepository.findOneBy({
+    profile: {
+      username: lowerCasedUsername,
+    },
+  })
+  return !user
 }
 
 export const googleSignupResolver: ResolverFn<
@@ -239,11 +238,20 @@ export const getMeUserResolver: ResolverFn<
   unknown,
   WithDataSourcesContext,
   unknown
-> = async (_obj, __, { models, claims }) => {
+> = async (_obj, __, { claims }) => {
   try {
-    return claims?.uid
-      ? userDataToUser(await models.user.get(claims.uid))
-      : undefined
+    if (!claims?.uid) {
+      return undefined
+    }
+
+    const user = await userRepository.findOneBy({
+      id: claims.uid,
+    })
+    if (!user) {
+      return undefined
+    }
+
+    return userDataToUser(user)
   } catch (error) {
     return undefined
   }
@@ -254,18 +262,20 @@ export const getUserResolver: ResolverFn<
   unknown,
   WithDataSourcesContext,
   QueryUserArgs
-> = async (_obj, { userId: id, username }, { models, claims }) => {
+> = async (_obj, { userId: id, username }, { uid }) => {
   if (!(id || username)) {
     return { errorCodes: [UserErrorCode.BadRequest] }
   }
 
   const userId =
-    id || (username && (await models.user.getWhere({ username }))?.id)
+    id ||
+    (username &&
+      (await userRepository.findOneBy({ profile: { username } }))?.id)
   if (!userId) {
     return { errorCodes: [UserErrorCode.UserNotFound] }
   }
 
-  const userRecord = await models.user.getUserDetails(claims?.uid, userId)
+  const userRecord = await userRepository.findOneBy({ id: userId })
   if (!userRecord) {
     return { errorCodes: [UserErrorCode.UserNotFound] }
   }
@@ -274,9 +284,8 @@ export const getUserResolver: ResolverFn<
 }
 
 export const getAllUsersResolver = authorized<UsersSuccess, UsersError>(
-  async (_obj, _params, { models, claims, authTrx }) => {
-    const users =
-      (await authTrx((tx) => models.user.getTopUsers(claims.uid, tx))) || []
+  async (_obj, _params) => {
+    const users = await getTopUsers()
     const result = { users: users.map((userData) => userDataToUser(userData)) }
     return result
   }
@@ -297,8 +306,10 @@ export const deleteAccountResolver = authorized<
   DeleteAccountSuccess,
   DeleteAccountError,
   MutationDeleteAccountArgs
->(async (_, { userID }, { models, claims, log, pubsub }) => {
-  const user = await models.user.get(userID)
+>(async (_, { userID }, { claims, log, pubsub }) => {
+  const user = await userRepository.findOneBy({
+    id: userID,
+  })
   if (!user) {
     return {
       errorCodes: [DeleteAccountErrorCode.UserNotFound],

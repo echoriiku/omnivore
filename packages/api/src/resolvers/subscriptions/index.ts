@@ -1,7 +1,7 @@
 import Parser from 'rss-parser'
+import { getRepository } from '../../entity'
 import { Subscription } from '../../entity/subscription'
 import { User } from '../../entity/user'
-import { getRepository } from '../../entity/utils'
 import { env } from '../../env'
 import {
   MutationSubscribeArgs,
