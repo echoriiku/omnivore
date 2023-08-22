@@ -389,7 +389,9 @@ export default function Reader(): JSX.Element {
         section: 'Article',
         name: 'Edit Info',
         shortcut: ['i'],
-        perform: () => setShowEditModal(true),
+        perform: () => {
+          inspector.openInspector('info')
+        },
       },
     ],
     [readerSettings, inspector]
