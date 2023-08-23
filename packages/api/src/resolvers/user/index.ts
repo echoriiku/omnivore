@@ -1,6 +1,6 @@
 import * as jwt from 'jsonwebtoken'
+import { AppDataSource } from '../../data-source'
 import { deletePagesByParam } from '../../elastic/pages'
-import { setClaims, userRepository } from '../../entity'
 import { User as UserEntity } from '../../entity/user'
 import { env } from '../../env'
 import {
@@ -33,7 +33,7 @@ import {
   UsersError,
   UsersSuccess,
 } from '../../generated/graphql'
-import { AppDataSource } from '../../server'
+import { setClaims, userRepository } from '../../repository'
 import { createUser, getTopUsers } from '../../services/create_user'
 import { authorized, userDataToUser } from '../../utils/helpers'
 import { validateUsername } from '../../utils/usernamePolicy'
@@ -43,7 +43,7 @@ export const updateUserResolver = authorized<
   UpdateUserSuccess,
   UpdateUserError,
   MutationUpdateUserArgs
->(async (_, { input: { name, bio } }, { uid }) => {
+>(async (_, { input: { name, bio } }, { uid, authTrx }) => {
   const user = await userRepository.findOneBy({
     id: uid,
   })
@@ -65,15 +65,16 @@ export const updateUserResolver = authorized<
     return { errorCodes }
   }
 
-  const updatedUser = await userRepository.save({
-    id: uid,
-    name,
-    source: user.source,
-    sourceUserId: user.sourceUserId,
-    profile: {
-      bio,
-    },
-  })
+  const updatedUser = await authTrx((tx) =>
+    tx.getRepository(UserEntity).save({
+      ...user,
+      name,
+      profile: {
+        ...user.profile,
+        bio,
+      },
+    })
+  )
 
   return { user: userDataToUser(updatedUser) }
 })
@@ -82,7 +83,7 @@ export const updateUserProfileResolver = authorized<
   UpdateUserProfileSuccess,
   UpdateUserProfileError,
   MutationUpdateUserProfileArgs
->(async (_, { input: { userId, username, pictureUrl } }, { uid }) => {
+>(async (_, { input: { userId, username, pictureUrl } }, { uid, authTrx }) => {
   const user = await userRepository.findOneBy({
     id: userId,
   })
@@ -122,13 +123,16 @@ export const updateUserProfileResolver = authorized<
     }
   }
 
-  const updatedUser = await userRepository.save({
-    id: uid,
-    profile: {
-      username: lowerCasedUsername,
-      pictureUrl,
-    },
-  })
+  const updatedUser = await authTrx((tx) =>
+    tx.getRepository(UserEntity).save({
+      ...user,
+      profile: {
+        ...user.profile,
+        username: lowerCasedUsername,
+        pictureUrl,
+      },
+    })
+  )
 
   return { user: userDataToUser(updatedUser) }
 })

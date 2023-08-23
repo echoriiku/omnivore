@@ -1,22 +1,22 @@
-import 'mocha'
+import { MailDataRequired } from '@sendgrid/helpers/classes/mail'
 import chai, { expect } from 'chai'
+import 'mocha'
+import sinon from 'sinon'
+import sinonChai from 'sinon-chai'
+import { StatusType, User } from '../../src/entity/user'
+import { getRepository } from '../../src/repository'
+import {
+  getUserFollowers,
+  getUserFollowing,
+} from '../../src/services/followers'
+import { createGroup } from '../../src/services/groups'
+import * as util from '../../src/utils/sendEmail'
 import {
   createTestUser,
   createUserWithoutProfile,
   deleteTestUser,
   getProfile,
 } from '../db'
-import { createGroup } from '../../src/services/groups'
-import {
-  getUserFollowers,
-  getUserFollowing,
-} from '../../src/services/followers'
-import sinonChai from 'sinon-chai'
-import sinon from 'sinon'
-import * as util from '../../src/utils/sendEmail'
-import { MailDataRequired } from '@sendgrid/helpers/classes/mail'
-import { User } from '../../src/entity/user'
-import { getRepository } from '../../src/entity'
 
 chai.use(sinonChai)
 
@@ -50,10 +50,10 @@ describe('create user', () => {
       const userFollowing = await getUserFollowing(user)
       const adminUserFollowers = await getUserFollowers(adminUser)
       const adminUserFollowing = await getUserFollowing(adminUser)
-      expect(userFollowers.map(u => u.id)).to.eql(admninIds)
-      expect(userFollowing.map(u => u.id)).to.eql(admninIds)
-      expect(adminUserFollowers.map(u => u.id)).to.eql(userIds)
-      expect(adminUserFollowing.map(u => u.id)).to.eql(userIds)
+      expect(userFollowers.map((u) => u.id)).to.eql(admninIds)
+      expect(userFollowing.map((u) => u.id)).to.eql(admninIds)
+      expect(adminUserFollowers.map((u) => u.id)).to.eql(userIds)
+      expect(adminUserFollowing.map((u) => u.id)).to.eql(userIds)
     })
 
     it('creates profile when user exists but profile not', async () => {
