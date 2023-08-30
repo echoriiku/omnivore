@@ -1,5 +1,5 @@
 import Parser from 'rss-parser'
-import { AppDataSource } from '../../data-source'
+import { appDataSource } from '../../data_source'
 import { Subscription } from '../../entity/subscription'
 import { User } from '../../entity/user'
 import { env } from '../../env'
@@ -53,16 +53,6 @@ export const subscriptionsResolver = authorized<
     { sort, type = SubscriptionType.Newsletter }, // default to newsletter
     { claims: { uid }, log }
   ) => {
-    log.info('subscriptionsResolver')
-
-    analytics.track({
-      userId: uid,
-      event: 'subscriptions',
-      properties: {
-        env: env.server.apiEnv,
-      },
-    })
-
     try {
       const sortBy =
         sort?.by === SortBy.UpdatedTime ? 'lastFetchedAt' : 'createdAt'
@@ -252,7 +242,7 @@ export const subscribeResolver = authorized<
       const feed = await parser.parseURL(input.url)
 
       // limit number of rss subscriptions to 50
-      const newSubscriptions = (await AppDataSource.query(
+      const newSubscriptions = (await appDataSource.query(
         `insert into omnivore.subscriptions (name, url, description, type, user_id, icon) 
         select $1, $2, $3, $4, $5, $6 from omnivore.subscriptions 
         where user_id = $5 and type = 'RSS' and status = 'ACTIVE' 

@@ -14,7 +14,7 @@ import express from 'express'
 import * as jwt from 'jsonwebtoken'
 import url from 'url'
 import { promisify } from 'util'
-import { AppDataSource } from '../../data-source'
+import { appDataSource } from '../../data_source'
 import { RegistrationType, StatusType, User } from '../../entity/user'
 import { env } from '../../env'
 import { LoginErrorCode, SignupErrorCode } from '../../generated/graphql'
@@ -524,7 +524,7 @@ export function authRouter() {
         }
 
         if (user.status === StatusType.Pending) {
-          const updated = await AppDataSource.transaction(
+          const updated = await appDataSource.transaction(
             async (entityManager) => {
               await setClaims(entityManager, user.id)
               return entityManager
@@ -642,7 +642,7 @@ export function authRouter() {
         }
 
         const hashedPassword = await hashPassword(password)
-        const updated = await AppDataSource.transaction(
+        const updated = await appDataSource.transaction(
           async (entityManager) => {
             await setClaims(entityManager, user.id)
             return entityManager

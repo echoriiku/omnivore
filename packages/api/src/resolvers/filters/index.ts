@@ -1,5 +1,4 @@
 import { Between } from 'typeorm'
-import { AppDataSource } from '../../data-source'
 import { Filter } from '../../entity/filter'
 import { User } from '../../entity/user'
 import { env } from '../../env'
@@ -20,7 +19,7 @@ import {
   SaveFilterErrorCode,
   SaveFilterSuccess,
 } from '../../generated/graphql'
-import { getRepository, setClaims } from '../../repository'
+import { entityManager, getRepository, setClaims } from '../../repository'
 import { analytics } from '../../utils/analytics'
 import { authorized } from '../../utils/helpers'
 
@@ -234,7 +233,7 @@ export const moveFilterResolver = authorized<
     const moveUp = newPosition < oldPosition
 
     // move filter to the new position
-    const updated = await AppDataSource.transaction(async (t) => {
+    const updated = await entityManager.transaction(async (t) => {
       await setClaims(t, uid)
 
       // update the position of the other filters

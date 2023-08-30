@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken'
-import { AppDataSource } from '../../data-source'
+import { appDataSource } from '../../data_source'
 import { deletePagesByParam } from '../../elastic/pages'
 import { User as UserEntity } from '../../entity/user'
 import { env } from '../../env'
@@ -335,7 +335,7 @@ export const deleteAccountResolver = authorized<
     },
   })
 
-  const result = await AppDataSource.transaction(async (t) => {
+  const result = await appDataSource.transaction(async (t) => {
     await setClaims(t, claims.uid)
     return t.getRepository(UserEntity).delete(userID)
   })
