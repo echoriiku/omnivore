@@ -33,8 +33,9 @@ import {
   UsersError,
   UsersSuccess,
 } from '../../generated/graphql'
-import { setClaims, userRepository } from '../../repository'
-import { createUser, getTopUsers } from '../../services/create_user'
+import { setClaims } from '../../repository'
+import { userRepository } from '../../repository/user'
+import { createUser } from '../../services/create_user'
 import { authorized, userDataToUser } from '../../utils/helpers'
 import { validateUsername } from '../../utils/usernamePolicy'
 import { WithDataSourcesContext } from '../types'
@@ -289,7 +290,7 @@ export const getUserResolver: ResolverFn<
 
 export const getAllUsersResolver = authorized<UsersSuccess, UsersError>(
   async (_obj, _params) => {
-    const users = await getTopUsers()
+    const users = await userRepository.findTopUsers()
     const result = { users: users.map((userData) => userDataToUser(userData)) }
     return result
   }
