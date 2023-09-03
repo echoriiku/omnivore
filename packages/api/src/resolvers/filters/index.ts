@@ -27,7 +27,7 @@ export const saveFilterResolver = authorized<
   SaveFilterSuccess,
   SaveFilterError,
   MutationSaveFilterArgs
->(async (_, { input }, { claims, log }) => {
+>(async (_, { input }, { authTrx, claims, log }) => {
   log.info('Saving filters', {
     input,
     labels: {
