@@ -371,10 +371,7 @@ export const functionResolvers = {
         ctx.claims &&
         article.uploadFileId
       ) {
-        const upload = await findUploadFileById(
-          article.uploadFileId,
-          ctx.claims.uid
-        )
+        const upload = await findUploadFileById(article.uploadFileId)
         if (!upload || !upload.fileName) {
           return undefined
         }
@@ -483,7 +480,7 @@ export const functionResolvers = {
         ctx.uid &&
         item.uploadFileId
       ) {
-        const upload = await findUploadFileById(item.uploadFileId, ctx.uid)
+        const upload = await findUploadFileById(item.uploadFileId)
         if (!upload || !upload.fileName) {
           return undefined
         }
