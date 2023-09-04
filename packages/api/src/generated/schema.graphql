@@ -1102,20 +1102,14 @@ type Mutation {
   createArticleSavingRequest(input: CreateArticleSavingRequestInput!): CreateArticleSavingRequestResult!
   createGroup(input: CreateGroupInput!): CreateGroupResult!
   createHighlight(input: CreateHighlightInput!): CreateHighlightResult!
-  createHighlightReply(input: CreateHighlightReplyInput!): CreateHighlightReplyResult!
   createLabel(input: CreateLabelInput!): CreateLabelResult!
   createNewsletterEmail: CreateNewsletterEmailResult!
-  createReaction(input: CreateReactionInput!): CreateReactionResult!
-  createReminder(input: CreateReminderInput!): CreateReminderResult!
   deleteAccount(userID: ID!): DeleteAccountResult!
   deleteFilter(id: ID!): DeleteFilterResult!
   deleteHighlight(highlightId: ID!): DeleteHighlightResult!
-  deleteHighlightReply(highlightReplyId: ID!): DeleteHighlightReplyResult!
   deleteIntegration(id: ID!): DeleteIntegrationResult!
   deleteLabel(id: ID!): DeleteLabelResult!
   deleteNewsletterEmail(newsletterEmailId: ID!): DeleteNewsletterEmailResult!
-  deleteReaction(id: ID!): DeleteReactionResult!
-  deleteReminder(id: ID!): DeleteReminderResult!
   deleteRule(id: ID!): DeleteRuleResult!
   deleteWebhook(id: ID!): DeleteWebhookResult!
   generateApiKey(input: GenerateApiKeyInput!): GenerateApiKeyResult!
@@ -1142,25 +1136,18 @@ type Mutation {
   setBookmarkArticle(input: SetBookmarkArticleInput!): SetBookmarkArticleResult!
   setDeviceToken(input: SetDeviceTokenInput!): SetDeviceTokenResult!
   setFavoriteArticle(id: ID!): SetFavoriteArticleResult!
-  setFollow(input: SetFollowInput!): SetFollowResult!
   setIntegration(input: SetIntegrationInput!): SetIntegrationResult!
   setLabels(input: SetLabelsInput!): SetLabelsResult!
   setLabelsForHighlight(input: SetLabelsForHighlightInput!): SetLabelsResult!
   setLinkArchived(input: ArchiveLinkInput!): ArchiveLinkResult!
   setRule(input: SetRuleInput!): SetRuleResult!
-  setShareArticle(input: SetShareArticleInput!): SetShareArticleResult!
-  setShareHighlight(input: SetShareHighlightInput!): SetShareHighlightResult!
   setUserPersonalization(input: SetUserPersonalizationInput!): SetUserPersonalizationResult!
   setWebhook(input: SetWebhookInput!): SetWebhookResult!
   subscribe(input: SubscribeInput!): SubscribeResult!
   unsubscribe(name: String!, subscriptionId: ID): UnsubscribeResult!
   updateHighlight(input: UpdateHighlightInput!): UpdateHighlightResult!
-  updateHighlightReply(input: UpdateHighlightReplyInput!): UpdateHighlightReplyResult!
   updateLabel(input: UpdateLabelInput!): UpdateLabelResult!
-  updateLinkShareInfo(input: UpdateLinkShareInfoInput!): UpdateLinkShareInfoResult!
   updatePage(input: UpdatePageInput!): UpdatePageResult!
-  updateReminder(input: UpdateReminderInput!): UpdateReminderResult!
-  updateSharedComment(input: UpdateSharedCommentInput!): UpdateSharedCommentResult!
   updateSubscription(input: UpdateSubscriptionInput!): UpdateSubscriptionResult!
   updateUser(input: UpdateUserInput!): UpdateUserResult!
   updateUserProfile(input: UpdateUserProfileInput!): UpdateUserProfileResult!
@@ -1290,12 +1277,8 @@ type Query {
   apiKeys: ApiKeysResult!
   article(format: String, slug: String!, username: String!): ArticleResult!
   articleSavingRequest(id: ID, url: String): ArticleSavingRequestResult!
-  articles(after: String, first: Int, includePending: Boolean, query: String, sharedOnly: Boolean, sort: SortParams): ArticlesResult!
   deviceTokens: DeviceTokensResult!
-  feedArticles(after: String, first: Int, sharedByUser: ID, sort: SortParams): FeedArticlesResult!
   filters: FiltersResult!
-  getFollowers(userId: ID): GetFollowersResult!
-  getFollowing(userId: ID): GetFollowingResult!
   getUserPersonalization: GetUserPersonalizationResult!
   groups: GroupsResult!
   hello: String
@@ -1305,11 +1288,9 @@ type Query {
   newsletterEmails: NewsletterEmailsResult!
   recentEmails: RecentEmailsResult!
   recentSearches: RecentSearchesResult!
-  reminder(linkId: ID!): ReminderResult!
   rules(enabled: Boolean): RulesResult!
   search(after: String, first: Int, format: String, includeContent: Boolean, query: String): SearchResult!
   sendInstallInstructions: SendInstallInstructionsResult!
-  sharedArticle(selectedHighlightId: String, slug: String!, username: String!): SharedArticleResult!
   subscriptions(sort: SortParams, type: SubscriptionType): SubscriptionsResult!
   typeaheadSearch(first: Int, query: String!): TypeaheadSearchResult!
   updatesSince(after: String, first: Int, since: Date!, sort: SortParams): UpdatesSinceResult!
@@ -1806,7 +1787,7 @@ enum SetFavoriteArticleErrorCode {
 union SetFavoriteArticleResult = SetFavoriteArticleError | SetFavoriteArticleSuccess
 
 type SetFavoriteArticleSuccess {
-  favoriteArticle: Article!
+  success: Boolean!
 }
 
 type SetFollowError {

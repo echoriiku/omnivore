@@ -1,6 +1,5 @@
 import { Between } from 'typeorm'
 import { Filter } from '../../entity/filter'
-import { User } from '../../entity/user'
 import { env } from '../../env'
 import {
   DeleteFilterError,
@@ -17,7 +16,7 @@ import {
   MutationSaveFilterArgs,
   SaveFilterError,
   SaveFilterErrorCode,
-  SaveFilterSuccess
+  SaveFilterSuccess,
 } from '../../generated/graphql'
 import { analytics } from '../../utils/analytics'
 import { authorized } from '../../utils/helpers'
@@ -26,7 +25,7 @@ export const saveFilterResolver = authorized<
   SaveFilterSuccess,
   SaveFilterError,
   MutationSaveFilterArgs
->(async (_, { input }, { authTrx, uid, log }) => {
+>(async (_, { input }, { authTrx, log }) => {
   try {
     const filter = await authTrx(async (t) => {
       return t.getRepository(Filter).save({
@@ -77,40 +76,20 @@ export const deleteFilterResolver = authorized<
 })
 
 export const filtersResolver = authorized<FiltersSuccess, FiltersError>(
-  async (_, __, { claims, log }) => {
-    log.info('Getting filters', {
-      labels: {
-        source: 'resolver',
-        resolver: 'filtersResolver',
-        uid: claims.uid,
-      },
-    })
-
+  async (_, __, { authTrx, uid, log }) => {
     try {
-      const user = await getRepository(User).findOneBy({ id: claims.uid })
-      if (!user) {
-        return {
-          errorCodes: [FiltersErrorCode.Unauthorized],
-        }
-      }
-
-      const filters = await getRepository(Filter).find({
-        where: { user: { id: claims.uid } },
-        order: { position: 'ASC' },
-      })
+      const filters = await authTrx((t) =>
+        t.getRepository(Filter).find({
+          where: { user: { id: uid } },
+          order: { position: 'ASC' },
+        })
+      )
 
       return {
         filters,
       }
     } catch (error) {
-      log.error('Error getting filters', {
-        error,
-        labels: {
-          source: 'resolver',
-          resolver: 'filtersResolver',
-          uid: claims.uid,
-        },
-      })
+      log.error('Error getting filters', error)
 
       return {
         errorCodes: [FiltersErrorCode.BadRequest],
@@ -123,7 +102,7 @@ export const moveFilterResolver = authorized<
   MoveFilterSuccess,
   MoveFilterError,
   MutationMoveFilterArgs
->(async (_, { input }, { claims: { uid }, log }) => {
+>(async (_, { input }, { authTrx, uid, log }) => {
   log.info('Moving filters', {
     input,
     filters: {
@@ -136,17 +115,12 @@ export const moveFilterResolver = authorized<
   const { filterId, afterFilterId } = input
 
   try {
-    const user = await getRepository(User).findOneBy({ id: uid })
-    if (!user) {
-      return {
-        errorCodes: [MoveFilterErrorCode.Unauthorized],
-      }
-    }
-
-    const filter = await getRepository(Filter).findOne({
-      where: { id: filterId },
-      relations: ['user'],
-    })
+    const filter = await authTrx((t) =>
+      t.getRepository(Filter).findOne({
+        where: { id: filterId },
+        relations: ['user'],
+      })
+    )
     if (!filter) {
       return {
         errorCodes: [MoveFilterErrorCode.NotFound],
@@ -167,10 +141,12 @@ export const moveFilterResolver = authorized<
     // if afterFilterId is not provided, move to the top
     let newPosition = 1
     if (afterFilterId) {
-      const afterFilter = await getRepository(Filter).findOne({
-        where: { id: afterFilterId },
-        relations: ['user'],
-      })
+      const afterFilter = await authTrx((t) =>
+        t.getRepository(Filter).findOne({
+          where: { id: afterFilterId },
+          relations: ['user'],
+        })
+      )
       if (!afterFilter) {
         return {
           errorCodes: [MoveFilterErrorCode.NotFound],
@@ -186,9 +162,7 @@ export const moveFilterResolver = authorized<
     const moveUp = newPosition < oldPosition
 
     // move filter to the new position
-    const updated = await entityManager.transaction(async (t) => {
-      await setClaims(t, uid)
-
+    const updated = await authTrx(async (t) => {
       // update the position of the other filters
       const updated = await t.getRepository(Filter).update(
         {
