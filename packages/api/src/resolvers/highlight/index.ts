@@ -29,9 +29,10 @@ import {
 } from '../../generated/graphql'
 import { highlightRepository } from '../../repository/highlight'
 import {
+  createHighlight,
   deleteHighlightById,
   mergeHighlights,
-  saveHighlight,
+  updateHighlight,
 } from '../../services/highlights'
 import { analytics } from '../../utils/analytics'
 import { authorized } from '../../utils/helpers'
@@ -54,7 +55,12 @@ export const createHighlightResolver = authorized<
   MutationCreateHighlightArgs
 >(async (_, { input }, { log, pubsub, uid }) => {
   try {
-    const newHighlight = await saveHighlight(input, uid, pubsub)
+    const newHighlight = await createHighlight(
+      input,
+      input.articleId,
+      uid,
+      pubsub
+    )
 
     analytics.track({
       userId: uid,
@@ -124,6 +130,7 @@ export const mergeHighlightResolver = authorized<
     const newHighlight = await mergeHighlights(
       overlapHighlightIdList,
       highlight,
+      input.articleId,
       uid,
       pubsub
     )
@@ -155,7 +162,12 @@ export const updateHighlightResolver = authorized<
   MutationUpdateHighlightArgs
 >(async (_, { input }, { pubsub, uid, log }) => {
   try {
-    const updatedHighlight = await saveHighlight(input, uid, pubsub)
+    const updatedHighlight = await updateHighlight(
+      input.highlightId,
+      input,
+      uid,
+      pubsub
+    )
 
     return { highlight: highlightDataToHighlight(updatedHighlight) }
   } catch (error) {
