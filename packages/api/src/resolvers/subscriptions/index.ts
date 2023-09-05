@@ -55,8 +55,8 @@ export const subscriptionsResolver = authorized<
         sort?.by === SortBy.UpdatedTime ? 'lastFetchedAt' : 'createdAt'
       const sortOrder = sort?.order === SortOrder.Ascending ? 'ASC' : 'DESC'
 
-      const queryBuilder = await authTrx((t) =>
-        t
+      const subscriptions = await authTrx(async (t) => {
+        const queryBuilder = t
           .getRepository(Subscription)
           .createQueryBuilder('subscription')
           .leftJoinAndSelect('subscription.newsletterEmail', 'newsletterEmail')
@@ -64,16 +64,16 @@ export const subscriptionsResolver = authorized<
             user: { id: uid },
             type,
           })
-      )
 
-      // only return active subscriptions for newsletter
-      if (type === SubscriptionType.Newsletter) {
-        queryBuilder.andWhere({ status: SubscriptionStatus.Active })
-      }
+        // only return active subscriptions for newsletter
+        if (type === SubscriptionType.Newsletter) {
+          queryBuilder.andWhere({ status: SubscriptionStatus.Active })
+        }
 
-      const subscriptions = await queryBuilder
-        .orderBy('subscription.' + sortBy, sortOrder)
-        .getMany()
+        return queryBuilder
+          .orderBy('subscription.' + sortBy, sortOrder)
+          .getMany()
+      })
 
       return {
         subscriptions,
